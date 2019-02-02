@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 
 class Perceptoron(object):
@@ -10,23 +11,24 @@ class Perceptoron(object):
         self.random_state = random_state
 
     def fit(self, X, y):
-            # X:shape=[サンプル数，特徴量]のndarray
-            # y:shape=[サンプル数]
-            # クラスを返す
+        '''X:shape=[サンプル数，特徴量]のndarray
+         y:shape=[サンプル数]
+         クラスを返す
+        '''
+        # マーセツイスター生成器
         rgen = np.random.RandomState(self.random_state)
-            #マーセツイスター生成器
+        # 一次元配列，適合後重み  gen.normalで生成，初期化
         self.w_ = rgen.normal(loc=0.0, scale=0.01, size=1 + X.shape[1])
-            #一次元配列，適合後重み  gen.normalで生成，初期化
+        # 各エポックでの誤分類（更新）の数
         self.errors_ = []
-            #各エポックでの誤分類（更新）の数
-        for _ in range(self.n_iter): # Epoch 毎
+        for _ in range(self.n_iter):  # Epoch 毎
             errors = 0
-            for xi, target in zip(X, y): # X，yの要素で更新
+            for xi, target in zip(X, y):  # X，yの要素で更新
                 update = self.eta * (target - self.predict(xi))
-                self.w_[1:] += update * xi
                 # 重みW_1 ～ W_m の更新
-                self.w_[0] += update
+                self.w_[1:] += update * xi
                 # 重みW_0 の更新
+                self.w_[0] += update
                 errors += int(update != 0.0)
             self.errors_.append(errors)
         return self
@@ -37,29 +39,28 @@ class Perceptoron(object):
     def predict(self, X):
         return np.where(self.net_input(X) >= 0.0, 1, -1)
 
+
 ## 決定境界可視化関数
-from matplotlib.colors import ListedColormap
-def plot_decisioin_regions(X,y,classifier,resolution=0.02):
+
+def plot_decision_regions(X, y, classifier, resolution=0.02):
     markers = ['s', 'x', 'o', '~', 'v']
     colors = ['red', 'blue', 'lightgreen', 'gray', 'cyan']
     cmap = ListedColormap(colors[:len(np.unique(y))])
 
+    # 二つの特徴量から最大値と最小値を求める
     x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    # 二つの特徴量から最大値と最小値を求める
-
-    xx1,xx2 = np.meshgrid(np.arange(x1_min,x1_max,resolution),
-                          np.arange(x2_min,x2_max,resolution))
     # グリッド配列の生成
-
-    Z = classifier.predict(np.array([xx1.ravel(),xx2.ravel()]).T)
+    xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
+                           np.arange(x2_min, x2_max, resolution))
     # パーセプトロンにグリッドポイントを投げる
+    Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
     Z = Z.reshape(xx1.shape)
 
-    plt.contour(xx1,xx2,Z,alpha = 0.3,cmap=cmap)
+    plt.contour(xx1, xx2, Z, alpha=0.3, cmap=cmap)
 
-    plt.xlim(xx1.min(),xx1.max())
-    plt.ylim(xx2.min(),xx2.max())
+    plt.xlim(xx1.min(), xx1.max())
+    plt.ylim(xx2.min(), xx2.max())
 
     for idx, cl in enumerate(np.unique(y)):
         plt.scatter(x=X[y == cl, 0],
@@ -70,6 +71,7 @@ def plot_decisioin_regions(X,y,classifier,resolution=0.02):
                     label=cl,
                     edgecolors='black')
 
+
 if __name__ == '__main__':
     # v1 = np.array([1, 2, 3])
     # v2 = 0.5 * v1
@@ -79,16 +81,15 @@ if __name__ == '__main__':
     df = pd.read_csv('https://archive.ics.uci.edu/ml/'
                      'machine-learning-databases/iris/iris.data', header=None)
     print(type(df.tail()))
-    print(df.tail())
-    # 最後の五行だけ出力
+    print(df.tail())# 最後の五行だけ出力
 
-    # select setosa and versicolor
-    y = df.iloc[0:100, 4].values
+    ## select setosa and versicolor
     # pd.df.iloc 複数のデータを範囲指定（行・列番号）で抽出する
-    print(y)
     # 1～100行，4要素目(目的変数)を抽出
-    y = np.where(y == 'Iris-setosa', -1, 1)
+    y = df.iloc[0:100, 4].values
+    print(y)
     # "Iris-setosa"を-1 それ以外(verginica)を1に変換
+    y = np.where(y == 'Iris-setosa', -1, 1)
 
     # extract sepal length and petal length
     X = df.iloc[0:100, [0, 2]].values
@@ -106,16 +107,16 @@ if __name__ == '__main__':
     plt.savefig('images/02_06.png', dpi=300)
     # plt.show()
 
-    ppn = Perceptoron(eta = 0.1, n_iter=10)
-    ppn.fit(X,y)
+    ppn = Perceptoron(eta=0.1, n_iter=10)
+    ppn.fit(X, y)
 
-    plt.plot(range(1,len(ppn.errors_)+1),ppn.errors_,marker = 'o')
+    plt.plot(range(1, len(ppn.errors_) + 1), ppn.errors_, marker='o')
     plt.xlabel('Epochs')
     plt.ylabel('Number of update')
     plt.show()
 
-    plot_decisioin_regions(X,y,classifier=ppn)
+    plot_decision_regions(X, y, classifier=ppn)
     plt.xlabel('sepal length')
     plt.ylabel('petal length')
-    plt.legend(loc = 'upper left')
+    plt.legend(loc='upper left')
     plt.show()
