@@ -13,3 +13,4 @@ print(list(all_window))
 all_window = mit.windowed(array, n=3, step=2, fillvalue="Filled")
 print("type", type(all_window))
 print(list(all_window))
+
